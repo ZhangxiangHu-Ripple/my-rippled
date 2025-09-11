@@ -1912,6 +1912,103 @@ floatLog_wrap(void* env, wasm_val_vec_t const* params, wasm_val_vec_t* results)
         runtime, params, results, hf->floatLog(*x, *rounding), i);
 }
 
+wasm_trap_t*
+bn254AddHelper_wrap(
+    void* env,
+    wasm_val_vec_t const* params,
+    wasm_val_vec_t* results)
+{
+    auto* hf       = reinterpret_cast<HostFunctions*>(env);
+    auto const* rt = reinterpret_cast<InstanceWrapper const*>(hf->getRT());
+    int index = 0;
+
+    // Read P1
+    auto p1 = getDataSlice(rt, params, index);
+    if (!p1)
+        return hfResult(results, p1.error());
+
+    // Read P2
+    auto p2 = getDataSlice(rt, params, index);
+    if (!p2)
+        return hfResult(results, p2.error());
+
+    // Call the virtual host function. returnResult will:
+    //  - read the (ptr,len) for the output buffer from params using 'index'
+    //  - copy the Bytes (even if empty) into that buffer
+    //  - set the numeric return value in 'results'
+    return returnResult(rt, params, results, hf->bn254AddHelper(*p1, *p2), index);
+}
+
+wasm_trap_t*
+bn254MulHelper_wrap(
+    void* env,
+    wasm_val_vec_t const* params,
+    wasm_val_vec_t* results)
+{
+    auto* hf       = reinterpret_cast<HostFunctions*>(env);
+    auto const* rt = reinterpret_cast<InstanceWrapper const*>(hf->getRT());
+    int index = 0;
+
+    // Read P1
+    auto p1 = getDataSlice(rt, params, index);
+    if (!p1)
+        return hfResult(results, p1.error());
+
+    // Read P2
+    auto s = getDataSlice(rt, params, index);
+    if (!s)
+        return hfResult(results, s.error());
+
+    // Call the virtual host function. returnResult will:
+    //  - read the (ptr,len) for the output buffer from params using 'index'
+    //  - copy the Bytes (even if empty) into that buffer
+    //  - set the numeric return value in 'results'
+    return returnResult(rt, params, results, hf->bn254AddHelper(*p1, *s), index);
+}
+
+wasm_trap_t*
+bn254NegHelper_wrap(
+    void* env,
+    wasm_val_vec_t const* params,
+    wasm_val_vec_t* results)
+{
+    auto* hf       = reinterpret_cast<HostFunctions*>(env);
+    auto const* rt = reinterpret_cast<InstanceWrapper const*>(hf->getRT());
+    int index = 0;
+
+    // Read P1
+    auto p1 = getDataSlice(rt, params, index);
+    if (!p1)
+        return hfResult(results, p1.error());
+
+    // Call the virtual host function. returnResult will:
+    //  - read the (ptr,len) for the output buffer from params using 'index'
+    //  - copy the Bytes (even if empty) into that buffer
+    //  - set the numeric return value in 'results'
+    return returnResult(rt, params, results, hf->bn254NegHelper(*p1), index);
+}
+
+wasm_trap_t*
+bn254PairingHelper_wrap(
+    void* env,
+    wasm_val_vec_t const* params,
+    wasm_val_vec_t* results)
+{
+    auto* hf       = reinterpret_cast<HostFunctions*>(env);
+    auto const* rt = reinterpret_cast<InstanceWrapper const*>(hf->getRT());
+    int index = 0;
+
+    auto pairs = getDataSlice(rt, params, index);
+    if (!pairs)
+        return hfResult(results, pairs.error());
+
+    // Call the virtual host function. returnResult will:
+    //  - read the (ptr,len) for the output buffer from params using 'index'
+    //  - copy the Bytes (even if empty) into that buffer
+    //  - set the numeric return value in 'results'
+    return returnResult(rt, params, results, hf->bn254PairingHelper(*pairs), index);
+}
+
 // LCOV_EXCL_START
 namespace test {
 

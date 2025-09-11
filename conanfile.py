@@ -113,6 +113,9 @@ class Xrpl(ConanFile):
         self.requires('lz4/1.10.0', force=True)
         self.requires('protobuf/3.21.12', force=True)
         self.requires('sqlite3/3.49.1', force=True)
+        self.requires('gmp/6.3.0', force=True)
+        self.requires('libsodium/1.0.20', force=True)
+
         if self.options.jemalloc:
             self.requires('jemalloc/5.3.0')
         if self.options.rocksdb:

@@ -292,6 +292,18 @@ public:
 
     Expected<Bytes, HostFunctionError>
     floatLog(Slice const& x, int32_t mode) override;
+
+    Expected<Bytes, HostFunctionError>
+    bn254AddHelper(Slice const& p1_uncompressed_be64, Slice const& p2_uncompressed_be64) override;
+
+    Expected<Bytes, HostFunctionError>
+    bn254MulHelper(Slice const& p1_uncompressed_be64, Slice const& scalar_uncompressed_be32) override;
+
+    Expected<Bytes, HostFunctionError>
+    bn254NegHelper(Slice const& p1_uncompressed_be64) override;
+
+    Expected<Bytes, HostFunctionError>
+    bn254PairingHelper(Slice const& pairs) override;
 };
 
 }  // namespace ripple
