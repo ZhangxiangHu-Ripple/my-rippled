@@ -603,8 +603,6 @@ bn254NegHelper_wrap(
 
 using bn254PairingHelper_proto = int32_t(
     uint8_t const*, 
-    int32_t,
-    uint8_t*, 
     int32_t);
 wasm_trap_t*
 bn254PairingHelper_wrap(

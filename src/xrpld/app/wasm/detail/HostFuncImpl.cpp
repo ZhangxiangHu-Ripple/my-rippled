@@ -1025,6 +1025,7 @@ WasmHostFunctionsImpl::bn254PairingHelper(
     }
     auto const gt = libff::alt_bn128_pp::final_exponentiation(acc);
     bool const result = (gt == libff::alt_bn128_GT::one());
+    std::cout << "bn254PairingHelper result: " << result << std::endl;
 
     Bytes out(RESULT_LEN);
     out[0] = result ? uint8_t{1} : uint8_t{0};
