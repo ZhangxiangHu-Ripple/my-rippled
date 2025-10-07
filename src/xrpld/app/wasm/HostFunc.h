@@ -484,6 +484,12 @@ struct HostFunctions
     }
 
     virtual Expected<Bytes, HostFunctionError>
+    bn254MulHelper(Slice const& p1_uncompressed_be64, Slice const& scalar_uncompressed_be32)
+    {
+        return Unexpected(HostFunctionError::INTERNAL);
+    }
+
+    virtual Expected<Bytes, HostFunctionError>
     floatSubtract(Slice const& x, Slice const& y, int32_t mode)
     {
         return Unexpected(HostFunctionError::INTERNAL);
@@ -526,19 +532,13 @@ struct HostFunctions
     }
 
     virtual Expected<Bytes, HostFunctionError>
-    bn254MulHelper(Slice const& p1_uncompressed_be64, Slice const& scalar_uncompressed_be32)
-    {
-        return Unexpected(HostFunctionError::INTERNAL);
-    }
-
-    virtual Expected<Bytes, HostFunctionError>
     bn254NegHelper(Slice const& p1_uncompressed_be64)
     {
         return Unexpected(HostFunctionError::INTERNAL);
     }
 
-    virtual Expected<Bytes, HostFunctionError>
-    bn254PairingHelper(Slice const& p1_uncompressed_be64)
+    virtual Expected<int32_t, HostFunctionError>
+    bn254PairingHelper(Slice const& pairs)
     {
         return Unexpected(HostFunctionError::INTERNAL);
     }

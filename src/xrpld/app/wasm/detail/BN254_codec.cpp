@@ -18,7 +18,7 @@
 //==============================================================================
 
 
-#include <xrpld/app/wasm/BN254_encoding.h>
+#include <xrpld/app/wasm/BN254_codec.h>
 
 namespace ripple {
 
@@ -43,7 +43,6 @@ bool be32_to_bigint_r(
 
     return true;
 }
-
 
 bool g1_from_uncompressed_be(
     uint8_t const in_be[64],
@@ -125,24 +124,18 @@ bool g2_from_uncompressed_be(
     const uint8_t* y_c0_le = in_le + 96;     // last 32 bytes (real part)
 
     libff::bigint<libff::alt_bn128_q_limbs> X_0, X_1, Y_0, Y_1;
-
     le32_to_bigint_q(x_c0_le, X_0);
     le32_to_bigint_q(x_c1_le, X_1);
     le32_to_bigint_q(y_c0_le, Y_0);
     le32_to_bigint_q(y_c1_le, Y_1);
-
     libff::alt_bn128_Fq x0_fq(X_0);
     libff::alt_bn128_Fq x1_fq(X_1);
     libff::alt_bn128_Fq y0_fq(Y_0);
     libff::alt_bn128_Fq y1_fq(Y_1);
-
     libff::alt_bn128_Fq2 x_fq2(x0_fq, x1_fq);  // x = x0 + x1*u
     libff::alt_bn128_Fq2 y_fq2(y0_fq, y1_fq);  // y = y0 + y1*u
 
-
     P = libff::alt_bn128_G2(x_fq2, y_fq2, libff::alt_bn128_Fq2::one());
-    
-    // std::cout << "\n-- g2_from_uncompressed_be reconstructed G2 point = (" << P.X << ", " << P.Y << ")\n";
     
     return P.is_well_formed();
 }

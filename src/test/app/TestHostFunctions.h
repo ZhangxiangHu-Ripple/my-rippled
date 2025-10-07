@@ -25,6 +25,7 @@
 #include <xrpld/app/wasm/HostFunc.h>
 #include <xrpld/app/wasm/WasmVM.h>
 #include <xrpld/ledger/detail/ApplyViewBase.h>
+#include <xrpld/app/wasm/BN254_codec.h>
 
 namespace ripple {
 
@@ -94,9 +95,19 @@ public:
         return env_.journal;
     }
 
+    bool getLedgersqn_called_ = false;
+    std::optional<int32_t> current_ledger_sqn_;
+    std::optional<int32_t> const& lastSqnOut() const { return current_ledger_sqn_; }
+
+    // std::optional<Bytes> last_mul_p1_;
+    // std::optional<Bytes> last_mul_scalar_;
+    // std::optional<Bytes> last_mul_out_;
+
     Expected<std::int32_t, HostFunctionError>
     getLedgerSqn() override
     {
+        getLedgersqn_called_ = true;
+        current_ledger_sqn_ = 12345;
         return 12345;
     }
 
@@ -572,6 +583,192 @@ public:
     {
         return floatLogImpl(x, mode);
     }
+
+    bool bn254Mul_called_ = false;
+    bool bn254Add_called_ = false;
+    bool bn254Neg_called_ = false;
+    bool bn254Pairing_called_ = false;
+    
+    // std::optional<Bytes> last_mul_p1_;
+    // std::optional<Bytes> last_mul_scalar_;
+    std::optional<Bytes> last_mul_out_;
+    std::optional<Bytes> last_add_out_;
+    std::optional<Bytes> last_neg_out_;
+    std::optional<int32_t> last_pairing_out_;
+
+    // getters
+    // std::optional<Bytes> const& lastMulP1() const { return last_mul_p1_; }
+    // std::optional<Bytes> const& lastMulScalar() const { return last_mul_scalar_; }
+    std::optional<Bytes> const& lastMulOut() const { return last_mul_out_; }
+    std::optional<Bytes> const& lastAddOut() const { return last_add_out_; }
+    std::optional<Bytes> const& lastNegOut() const { return last_neg_out_; }
+    std::optional<int32_t> const& lastPairingOut() const { return last_pairing_out_; }
+
+    Expected<Bytes, HostFunctionError>
+    bn254MulHelper( Slice const& p1_uncompressed_be64, Slice const& scalar_uncompressed_be32) override
+    {
+        bn254Mul_called_ = true;
+
+        libff::alt_bn128_pp::init_public_params();
+
+        try{
+            if (p1_uncompressed_be64.size() != G1_LEN || scalar_uncompressed_be32.size() != SCALAR_LEN)
+                return Unexpected(HostFunctionError::INVALID_PARAMS);
+
+            libff::alt_bn128_G1 p1;
+            if (!g1_from_uncompressed_be(p1_uncompressed_be64.data(), p1)) 
+                return Unexpected(HostFunctionError::DECODING);
+
+            libff::bigint<libff::alt_bn128_r_limbs> s;
+            if (!be32_to_bigint_r((scalar_uncompressed_be32.data()), s))
+                return Unexpected(HostFunctionError::DECODING);
+
+            libff::alt_bn128_G1 result = s * p1;
+
+            // std::cout << "\n --++ Multiplication Result in Projective format = (" << result.X << ", " << result.Y << ")\n";
+
+            Bytes out(G1_LEN);
+            if (!g1_to_uncompressed_be(result, out.data()))
+                return Unexpected(HostFunctionError::INTERNAL);
+
+            // std::ostringstream oss;
+            // oss << "[";
+            // for (size_t i = 0; i < out.size(); ++i)
+            // {
+            //     oss << static_cast<int>(out[i]);
+            //     if (i + 1 < out.size())
+            //         oss << ", ";
+            // }
+            // oss << "]";
+            // JLOG(getJournal().debug()) << "bn254MulHelper out=" << oss.str();
+            
+            last_mul_out_ = out;
+
+            return out;
+        } 
+        catch (...) 
+        {
+            return Unexpected(HostFunctionError::INTERNAL);
+        }
+
+        // return result;
+    }
+
+    Expected<Bytes, HostFunctionError>
+    bn254AddHelper( Slice const& p1_uncompressed_be64, Slice const& p2_uncompressed_be64) override
+    {
+        bn254Add_called_ = true;
+        libff::alt_bn128_pp::init_public_params();
+
+        try{
+            if (p1_uncompressed_be64.size() != G1_LEN || p2_uncompressed_be64.size() != G1_LEN)
+                return Unexpected(HostFunctionError::INVALID_PARAMS);
+
+            libff::alt_bn128_G1 p1, p2;
+            if (!g1_from_uncompressed_be(p1_uncompressed_be64.data(), p1) ||
+                !g1_from_uncompressed_be(p2_uncompressed_be64.data(), p2))
+                return Unexpected(HostFunctionError::DECODING);
+                
+            libff::alt_bn128_G1 result = p1 + p2;
+
+            Bytes out(G1_LEN);
+            if (!g1_to_uncompressed_be(result, out.data()))
+                return Unexpected(HostFunctionError::INTERNAL);
+
+            last_add_out_ = out;
+
+            return out;
+        }
+        catch (...)
+        {
+            return Unexpected(HostFunctionError::INTERNAL);
+        }
+    }
+
+    Expected<Bytes, HostFunctionError>
+    bn254NegHelper( Slice const& p1_uncompressed_be64) override
+    {
+        bn254Neg_called_ = true;
+        libff::alt_bn128_pp::init_public_params();
+
+        try{
+            if (p1_uncompressed_be64.size() != G1_LEN)
+            return Unexpected(HostFunctionError::INVALID_PARAMS);
+
+            libff::alt_bn128_G1 p1;
+            if (!g1_from_uncompressed_be(p1_uncompressed_be64.data(), p1)) 
+                return Unexpected(HostFunctionError::DECODING);
+
+            libff::alt_bn128_G1 result = -p1;
+
+            Bytes out(G1_LEN);
+            if (!g1_to_uncompressed_be(result, out.data()))
+                return Unexpected(HostFunctionError::INTERNAL);
+
+            last_neg_out_ = out;
+
+            return out;
+        }
+        catch (...)
+        {
+            return Unexpected(HostFunctionError::INTERNAL);
+        }
+    }
+
+    Expected<int32_t, HostFunctionError>
+    bn254PairingHelper(Slice const& pairs) override
+    {
+        // Disabe profiling for libff operations
+        libff::inhibit_profiling_info = true;
+        libff::inhibit_profiling_counters = true;
+        
+        bn254Pairing_called_ = true;
+        libff::alt_bn128_pp::init_public_params();
+        
+        try{
+            if (pairs.size() % PAIR_LEN != 0)
+                return Unexpected(HostFunctionError::INVALID_PARAMS);
+
+            libff::alt_bn128_Fq12 acc = libff::alt_bn128_Fq12::one();
+            size_t const npairs = pairs.size() / PAIR_LEN;
+
+            for (std::size_t i = 0; i < npairs; ++i) {
+                auto const* base = pairs.data() + i * PAIR_LEN;
+
+                libff::alt_bn128_G1 P;
+                libff::alt_bn128_G2 Q;
+
+                // Decode P (G1) and Q (G2) from uncompressed big-endian encodings
+                if (!g1_from_uncompressed_be(base + 0, P))
+                    return Unexpected(HostFunctionError::DECODING);
+
+                if (!g2_from_uncompressed_be(base + G1_LEN, Q))
+                    return Unexpected(HostFunctionError::DECODING);
+
+                // Convention: ignore (0) pairs; they contribute neutral element
+                if (P.is_zero() || Q.is_zero())
+                    continue;
+
+                auto preP = libff::alt_bn128_pp::precompute_G1(P);
+                auto preQ = libff::alt_bn128_pp::precompute_G2(Q);
+
+                acc = acc * libff::alt_bn128_pp::miller_loop(preP, preQ);
+            }
+            auto const gt = libff::alt_bn128_pp::final_exponentiation(acc);
+            bool const result = (gt == libff::alt_bn128_GT::one());
+            // std::cout << "bn254PairingHelper result: " << result << std::endl;
+            
+            // out[0] = result ? uint8_t{1} : uint8_t{0};
+
+            last_pairing_out_ = result;
+
+            return result ? 1 : -1;
+        }
+        catch (...)
+        {
+            return Unexpected(HostFunctionError::INTERNAL);
+        }
+    }
 };
 
 struct TestHostFunctionsSink : public TestHostFunctions
@@ -1043,6 +1240,7 @@ public:
         Slice const s = ouri->value();
         return Bytes(s.begin(), s.end());
     }
+
 };
 
 }  // namespace test

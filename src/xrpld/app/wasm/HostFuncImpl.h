@@ -302,7 +302,7 @@ public:
     Expected<Bytes, HostFunctionError>
     bn254NegHelper(Slice const& p1_uncompressed_be64) override;
 
-    Expected<Bytes, HostFunctionError>
+    Expected<int32_t, HostFunctionError>
     bn254PairingHelper(Slice const& pairs) override;
 };
 

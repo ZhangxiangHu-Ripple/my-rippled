@@ -21,7 +21,7 @@
 #include <libff/algebra/curves/alt_bn128/alt_bn128_pp.hpp>
 #include <xrpld/app/wasm/HostFuncImpl.h>
 #include <xrpld/app/wasm/HostFuncWrapper.h>
-#include <xrpld/app/wasm/BN254_encoding.h>
+#include <xrpld/app/wasm/BN254_codec.h>
 
 
 using namespace libff;

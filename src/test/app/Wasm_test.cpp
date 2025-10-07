@@ -25,6 +25,8 @@
 
 #include <xrpld/app/wasm/HostFuncWrapper.h>
 #include <xrpld/app/wasm/WamrVM.h>
+// Include the production host functions implementation so tests can use it
+#include <xrpld/app/wasm/HostFuncImpl.h>
 
 namespace ripple {
 namespace test {
@@ -269,28 +271,150 @@ struct Wasm_test : public beast::unit_test::suite
     }
 
     void
-    testWasmSP1Verifier()
+    testWasmGroth16Verifier()
     {
-        testcase("Wasm sp1 zkproof verifier");
+        testcase("Wasm Groth16 verifier");
+                
+        using namespace test::jtx;
+
+        Env env(*this);
+        {
+            std::string const wasmHex = groth16WasmHex;
+            std::string const wasmStr = boost::algorithm::unhex(wasmHex);
+            std::vector<uint8_t> const wasm(wasmStr.begin(), wasmStr.end());
+
+            auto& engine = WasmEngine::instance();
+
+            TestHostFunctions hfs(env, 0);
+            std::vector<WasmImportFunc> imp = createWasmImport(&hfs);
+            for (auto& i : imp)
+                i.gas = 0;
+
+            auto re = engine.run(
+                wasm,
+                ESCROW_FUNCTION_NAME,
+                {},
+                imp,
+                &hfs,
+                1'000'000,
+                env.journal);
+            
+            if (BEAST_EXPECT(re.has_value()))
+            {
+                BEAST_EXPECTS(re->result == 1, std::to_string(re->result));
+            }
+
+            // std::cout << "get_ledger_sqn_called_ = " << hfs.getLedgersqn_called_ << "\n";
+            // BEAST_EXPECTS(hfs.getLedgersqn_called_, "getLedgersqn_called_ was not called");
+
+            // auto const& d = *hfs.lastSqnOut();
+            // std::cout << "lastSqnOut.out (" << d << ")";
+            
+                /*
+                // Test if the host function was called and the output value
+                std::cout << "hfs.bn254Mul_called_ = " << hfs.bn254Mul_called_ << "\n";
+                BEAST_EXPECTS(hfs.bn254Mul_called_, "bn254MulHelper was not called");
+
+                std::cout << "hfs.bn254Add_called_ = " << hfs.bn254Add_called_ << "\n";
+                BEAST_EXPECTS(hfs.bn254Add_called_, "bn254MulHelper was not called");
+
+                std::cout << "hfs.bn254Neg_called_ = " << hfs.bn254Neg_called_ << "\n";
+                BEAST_EXPECTS(hfs.bn254Neg_called_, "bn254NegHelper was not called");
+
+                std::cout << "hfs.bn254Pairing_called_ = " << hfs.bn254Pairing_called_ << "\n";
+                BEAST_EXPECTS(hfs.bn254Pairing_called_, "bn254PairingHelper was not called");
+
+                auto const& b = *hfs.lastMulOut();
+                std::cout << "bn254Mul.out (" << b.size() << ") = [";
+                for (size_t i = 0; i < b.size(); ++i) {
+                    if (i) std::cout << ", ";
+                    std::cout << static_cast<unsigned>(b[i]);
+                }
+                std::cout << "]\n";
+
+                auto const& a = *hfs.lastAddOut();
+                std::cout << "bn254Add.out (" << a.size() << ") = [";
+                for (size_t i = 0; i < a.size(); ++i) {
+                    if (i) std::cout << ", ";
+                    std::cout << static_cast<unsigned>(a[i]);
+                }
+                std::cout << "]\n";
+
+                auto const& c = *hfs.lastNegOut();
+                std::cout << "bn254Neg.out (" << c.size() << ") = [";
+                for (size_t i = 0; i < c.size(); ++i) {
+                    if (i) std::cout << ", ";
+                    std::cout << static_cast<unsigned>(c[i]);
+                }
+                std::cout << "]\n";
+
+                auto const& d = *hfs.lastPairingOut();
+                std::cout << "bn254Pairing.out (" << d << ")";
+                // for (size_t i = 0; i < d.size(); ++i) {
+                //     if (i) std::cout << ", ";
+                //     std::cout << static_cast<unsigned>(d[i]);
+                // }
+                std::cout << "\n";
+            
+
+                // Test the result of the zkproof verification in the wasm module
+                if (re) {
+                std::cout << "re = { result: " << re->result
+                    << ", cost: "   << re->cost
+                    << " }\n";
+                } else {
+                    std::cout << "re = nullopt\n";
+                }
+                
+
+                if (BEAST_EXPECT(re.has_value()))
+                {
+                    BEAST_EXPECTS(re->result == 1, std::to_string(re->result));
+                }
+            */
+
+            env.close();
+        }
+
+        /*
         auto const ws = boost::algorithm::unhex(sp1WasmHex);
         Bytes const wasm(ws.begin(), ws.end());
 
         using namespace test::jtx;
 
         Env env{*this};
-        TestLedgerDataProvider hf(&env);
 
-        std::vector<WasmImportFunc> imports;
-        // Import trace_num, bn254_mul_helper, bn254_neg_helper, and bn254_pairing_helper host functions for the test
-        WASM_IMPORT_FUNC2(imports, traceNum, "trace_num", &hf, 500);
-        WASM_IMPORT_FUNC2(imports, bn254MulHelper, "bn254_mul_helper", &hf, 500);
-        WASM_IMPORT_FUNC2(imports, bn254AddHelper, "bn254_add_helper", &hf, 500);
-        WASM_IMPORT_FUNC2(imports, bn254NegHelper, "bn254_neg_helper", &hf, 500);
-        WASM_IMPORT_FUNC2(imports, bn254PairingHelper, "bn254_pairing_helper", &hf, 500);
+        // Create an ApplyContext and the real WasmHostFunctionsImpl so the
+        // production bn254_* helpers (and other host functions) are available
+        // to the module. This mirrors how production code wires host funcs.
+        OpenView ov{*env.current()};
+        // Create a minimal STTx for ApplyContext (same pattern as other tests)
+        STTx tx(ttESCROW_FINISH, [](STObject&) {});
+        ApplyContext ac{
+            env.app(),
+            ov,
+            tx,
+            tesSUCCESS,
+            env.current()->fees().base,
+            tapNONE,
+            env.journal};
+
+
+        // dummy keylet for the escrow (used by WasmHostFunctionsImpl)
+        auto const dummyEscrow = keylet::escrow(env.master, env.seq(env.master));
+        WasmHostFunctionsImpl hfs(ac, dummyEscrow);
+
+        // Build imports from the real host functions implementation
+        std::vector<WasmImportFunc> imports = createWasmImport(&hfs);
+
+        // Optionally set gas to 0 for tests (uncomment if desired)
+        // for (auto& i : imports) i.gas = 0;
+
         auto& engine = WasmEngine::instance();
 
-        // Pass the imports vector to the engine
-        auto const re = engine.run(wasm, "sp1_groth16_verifier", {}, imports, &hf, 1'000'000, env.journal);
+        // Pass the imports vector and the real host functions instance to the engine
+        auto const re = engine.run(wasm, "finish", {}, imports, &hfs, 1'000'000, env.journal);
+         
 
         if (re) {
             std::cout << "re = { result: " << re->result
@@ -306,6 +430,7 @@ struct Wasm_test : public beast::unit_test::suite
             // BEAST_EXPECTS(
             //     re->cost == 4'191'711'969ll, std::to_string(re->cost));
         }
+        */ 
     }
 
     void
@@ -722,19 +847,18 @@ struct Wasm_test : public beast::unit_test::suite
     {
         using namespace test::jtx;
 
-        // testGetDataHelperFunctions();
-        // testWasmLib();
-        // testBadWasm();
-        // testWasmLedgerSqn();
+        testGetDataHelperFunctions();
+        testWasmLib();
+        testBadWasm();
+        testWasmLedgerSqn();
 
-        // testWasmFib();
-        // testWasmSha();
-        // testWasmB58();
+        testWasmFib();
+        testWasmSha();
+        testWasmB58();
 
-        // testFloat();
+        testFloat();
 
-        // runing too long
-        testWasmSP1Verifier();
+        testWasmGroth16Verifier();
         // testWasmBG16Verifier();
 
         // testHFCost();

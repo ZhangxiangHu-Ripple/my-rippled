@@ -20,7 +20,7 @@
 #include <test/jtx.h>
 
 #include <xrpld/app/wasm/HostFuncImpl.h>
-#include <xrpld/app/wasm/BN254_encoding.h>
+#include <xrpld/app/wasm/BN254_codec.h>
 #include <libff/algebra/curves/alt_bn128/alt_bn128_pp.hpp>
 
 namespace ripple {
@@ -2941,16 +2941,16 @@ struct HostFuncImpl_test : public beast::unit_test::suite
         libff::alt_bn128_pp::init_public_params();
 
         const std::array<uint8_t, 64> p1 = {
-            32,230,116,74,156,35,226,243,216,231,165,167,137,205,166,71,
-            148,208,237,90,132,161,220,116,134,200,86,159,24,95,136,77,
-            31,75,27,178,43,221,196,185,210,202,234,225,122,49,27,73,
-            158,95,150,7,146,6,122,112,3,77,67,31,36,208,34,112
+            32, 230, 116, 74, 156, 35, 226, 243, 216, 231, 165, 167, 137, 205, 166, 71,
+            148, 208, 237, 90, 132, 161, 220, 116, 134, 200, 86, 159, 24, 95, 136, 77,
+            31, 75, 27, 178, 43, 221, 196, 185, 210, 202, 234, 225, 122, 49, 27, 73,
+            158, 95, 150, 7, 146, 6, 122, 112, 3, 77, 67, 31, 36, 208, 34, 112
         };
         const std::array<uint8_t, 64> p2 = {
-            15,87,104,38,114,207,147,31,133,195,219,12,201,126,187,60,
-            39,187,132,111,13,170,209,93,130,72,98,241,144,232,94,90,
-            12,170,12,126,245,127,219,134,239,113,104,59,23,148,208,146,
-            132,67,90,17,112,185,194,225,97,28,17,27,255,164,157,0
+            15, 87, 104, 38, 114, 207, 147, 31, 133, 195, 219, 12, 201, 126, 187, 60,
+            39, 187, 132, 111, 13, 170, 209, 93, 130, 72, 98, 241, 144, 232, 94, 90,
+            12, 170, 12, 126, 245, 127, 219, 134, 239, 113, 104, 59, 23, 148, 208, 146,
+            132, 67, 90, 17, 112, 185, 194, 225, 97, 28, 17, 27, 255, 164, 157, 0
         };
 
         libff::alt_bn128_G1 P, Q;
@@ -3119,16 +3119,19 @@ struct HostFuncImpl_test : public beast::unit_test::suite
         };
 
         auto result = hfs.bn254PairingHelper(Slice{pairs.data(), pairs.size()});
-        log << "Groth16 ran in " << (((*result)[0] == 1) ? "success" : "fail") << " result\n";
-        if (result && !result->empty()) {
-            log << "Groth16 ran in " << static_cast<int>((*result)[0]) << " result\n";
-        } else {
-            log << "Groth16 result is empty or null\n";
-        }
+        BEAST_EXPECT(result) && BEAST_EXPECT(*result == 1);
+        
+        // if (!result)
+        // {
+        //     log << "bn254PairingHelper returned error: "
+        //         << static_cast<int>(result.error()) << "\n";
+        //     BEAST_EXPECT(false); // force failure on error
+        //     return;
+        // }
 
-        BEAST_EXPECT(result.has_value());
-        BEAST_EXPECT(result->size() == 1);
-        BEAST_EXPECT((*result)[0] == 1);
+        // int32_t const v = *result; // 1 (valid) or -1 (invalid)
+        // log << "Groth16 pairing check: " << (v == 1 ? "success" : "fail")
+        //     << " (value=" << v << ")\n";
     }
 
     void
@@ -3196,10 +3199,10 @@ struct HostFuncImpl_test : public beast::unit_test::suite
             std::memcpy(add_buf, addRes->data(), IC_LEN);
         }
         const uint8_t* vk_x_bytes = add_buf;
-        for (int i = 0; i < 64; ++i) {
-            std::cout << std::hex << std::setw(2) << std::setfill('0') << (int)vk_x_bytes[i];
-        }
-        std::cout << std::dec << std::endl;
+        // for (int i = 0; i < 64; ++i) {
+        //     std::cout << std::hex << std::setw(2) << std::setfill('0') << (int)vk_x_bytes[i];
+        // }
+        // std::cout << std::dec << std::endl;
 
         // Split proof into (a, b, c) byte slices
         const uint8_t* proof_a_bytes = proof_bytes;
@@ -3209,13 +3212,12 @@ struct HostFuncImpl_test : public beast::unit_test::suite
         // Negate proof.a via host function
         uint8_t proof_a_buf[G1_LEN];
         std::memcpy(proof_a_buf, proof_a_bytes, G1_LEN);
-        std::cout << "before negation proof_a_bytes\n" << std::endl;
+        // std::cout << "before negation proof_a_bytes\n" << std::endl;
         
-        for (int i = 0; i < 64; ++i) {
-            std::cout << std::hex << std::setw(2) << std::setfill('0') << (int)proof_a_bytes[i];
-        }
-        std::cout << std::dec << std::endl;
-
+        // for (int i = 0; i < 64; ++i) {
+        //     std::cout << std::hex << std::setw(2) << std::setfill('0') << (int)proof_a_bytes[i];
+        // }
+        // std::cout << std::dec << std::endl;
 
         uint8_t neg_proof_a_bytes[G1_LEN] = {0};
         {
@@ -3262,18 +3264,16 @@ struct HostFuncImpl_test : public beast::unit_test::suite
         offset += G1_LEN;
         std::memcpy(input_pairs + offset, delta_bytes, G2_LEN);
         
-        std::cout << "before pairing check\n" << std::endl;
-        for (int i = 0; i < 768; ++i) {
-            std::cout << std::hex << std::setw(2) << std::setfill('0') << (int)input_pairs[i];
-        }
-        std::cout << std::dec << std::endl;
+        // std::cout << "before pairing check\n" << std::endl;
+        // for (int i = 0; i < 768; ++i) {
+        //     std::cout << std::hex << std::setw(2) << std::setfill('0') << (int)input_pairs[i];
+        // }
+        // std::cout << std::dec << std::endl;
 
         size_t num = 1;
         for (size_t i = 0; i < num; ++i) {
             auto result = hfs.bn254PairingHelper(Slice{input_pairs, GROTH16_PAIR_LEN});
-            BEAST_EXPECT(result.has_value());
-            BEAST_EXPECT(result->size() == 1);
-            BEAST_EXPECT((*result)[0] == 1);
+            BEAST_EXPECT(result) && BEAST_EXPECT(*result == 1);
         }
 
         const uint8_t mul_bytes[64] = {
@@ -3291,44 +3291,44 @@ struct HostFuncImpl_test : public beast::unit_test::suite
         BEAST_EXPECT(mulTest.has_value());
         std::memcpy(mul_test, mulTest->data(), IC_LEN);
 
-        constexpr std::array<uint8_t, 64> EXPECTED = {
-            0x09, 0xB6, 0xE3, 0x62, 0x92, 0x4D, 0x71, 0xBA,
-            0x4A, 0xD0, 0xDD, 0xD8, 0x2B, 0x94, 0x96, 0x99,
-            0x56, 0xB0, 0x5A, 0x04, 0xA5, 0xA0, 0xE6, 0xA8,
-            0xD0, 0xBF, 0x6B, 0x6F, 0x69, 0x59, 0xBE, 0xD7,
-            0x0D, 0x9B, 0xA2, 0x8B, 0xB5, 0x16, 0xED, 0xCB,
-            0x05, 0x1C, 0x0F, 0x3F, 0x93, 0x2F, 0xE2, 0xBE,
-            0xDD, 0x93, 0xC9, 0x0F, 0xC3, 0x78, 0x44, 0x9C,
-            0x2A, 0xEB, 0x09, 0x70, 0xCB, 0x8A, 0x85, 0x19,
-        };
+        // constexpr std::array<uint8_t, 64> EXPECTED = {
+        //     0x09, 0xB6, 0xE3, 0x62, 0x92, 0x4D, 0x71, 0xBA,
+        //     0x4A, 0xD0, 0xDD, 0xD8, 0x2B, 0x94, 0x96, 0x99,
+        //     0x56, 0xB0, 0x5A, 0x04, 0xA5, 0xA0, 0xE6, 0xA8,
+        //     0xD0, 0xBF, 0x6B, 0x6F, 0x69, 0x59, 0xBE, 0xD7,
+        //     0x0D, 0x9B, 0xA2, 0x8B, 0xB5, 0x16, 0xED, 0xCB,
+        //     0x05, 0x1C, 0x0F, 0x3F, 0x93, 0x2F, 0xE2, 0xBE,
+        //     0xDD, 0x93, 0xC9, 0x0F, 0xC3, 0x78, 0x44, 0x9C,
+        //     0x2A, 0xEB, 0x09, 0x70, 0xCB, 0x8A, 0x85, 0x19,
+        // };
 
-        bool ok = (sizeof(mul_test) == EXPECTED.size()) &&
-          std::equal(std::begin(mul_test), std::end(mul_test), EXPECTED.begin());
+        // bool ok = (sizeof(mul_test) == EXPECTED.size()) &&
+        //     std::equal(std::begin(mul_test), std::end(mul_test), EXPECTED.begin());
 
-        log << "Mul test " << ok << " result\n";
+        // log << "Mul test " << ok << " result\n";
 
         // auto end   = std::chrono::high_resolution_clock::now();
         // auto dur   = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
         // log << "Groth16 ran in " << dur.count() << " ms\n";
     }
 
-    // void
-    // testFloats()
-    // {
-    //     testFloatFromInt();
-    //     testFloatFromUint();
-    //     testFloatSet();
-    //     testFloatCompare();
-    //     testFloatAdd();
-    //     testFloatSubtract();
-    //     testFloatMultiply();
-    //     testFloatDivide();
-    //     testFloatRoot();
-    //     testFloatPower();
-    //     testFloatLog();
-    //     testFloatNonIOU();
-    //     testFloatTrace();
-    // }
+    void
+    testFloats()
+    {
+        testFloatFromInt();
+        testFloatFromUint();
+        testFloatSet();
+        testFloatCompare();
+        testFloatAdd();
+        testFloatSubtract();
+        testFloatMultiply();
+        testFloatDivide();
+        testFloatRoot();
+        testFloatPower();
+        testFloatLog();
+        testFloatNonIOU();
+        testFloatTrace();
+    }
 
     void testBN254()
     {
@@ -3372,10 +3372,10 @@ struct HostFuncImpl_test : public beast::unit_test::suite
         // testGetNFTFlags();
         // testGetNFTTransferFee();
         // testGetNFTSerial();
-        // testTrace();
-        // testTraceNum();
-        // testTraceAccount();
-        // testTraceAmount();
+        testTrace();
+        testTraceNum();
+        testTraceAccount();
+        testTraceAmount();
         // testFloats();
         testBN254();
     }
