@@ -589,16 +589,11 @@ public:
     bool bn254Neg_called_ = false;
     bool bn254Pairing_called_ = false;
     
-    // std::optional<Bytes> last_mul_p1_;
-    // std::optional<Bytes> last_mul_scalar_;
     std::optional<Bytes> last_mul_out_;
     std::optional<Bytes> last_add_out_;
     std::optional<Bytes> last_neg_out_;
     std::optional<int32_t> last_pairing_out_;
 
-    // getters
-    // std::optional<Bytes> const& lastMulP1() const { return last_mul_p1_; }
-    // std::optional<Bytes> const& lastMulScalar() const { return last_mul_scalar_; }
     std::optional<Bytes> const& lastMulOut() const { return last_mul_out_; }
     std::optional<Bytes> const& lastAddOut() const { return last_add_out_; }
     std::optional<Bytes> const& lastNegOut() const { return last_neg_out_; }
@@ -625,22 +620,9 @@ public:
 
             libff::alt_bn128_G1 result = s * p1;
 
-            // std::cout << "\n --++ Multiplication Result in Projective format = (" << result.X << ", " << result.Y << ")\n";
-
             Bytes out(G1_LEN);
             if (!g1_to_uncompressed_be(result, out.data()))
                 return Unexpected(HostFunctionError::INTERNAL);
-
-            // std::ostringstream oss;
-            // oss << "[";
-            // for (size_t i = 0; i < out.size(); ++i)
-            // {
-            //     oss << static_cast<int>(out[i]);
-            //     if (i + 1 < out.size())
-            //         oss << ", ";
-            // }
-            // oss << "]";
-            // JLOG(getJournal().debug()) << "bn254MulHelper out=" << oss.str();
             
             last_mul_out_ = out;
 
@@ -650,8 +632,6 @@ public:
         {
             return Unexpected(HostFunctionError::INTERNAL);
         }
-
-        // return result;
     }
 
     Expected<Bytes, HostFunctionError>
@@ -738,14 +718,12 @@ public:
                 libff::alt_bn128_G1 P;
                 libff::alt_bn128_G2 Q;
 
-                // Decode P (G1) and Q (G2) from uncompressed big-endian encodings
                 if (!g1_from_uncompressed_be(base + 0, P))
                     return Unexpected(HostFunctionError::DECODING);
 
                 if (!g2_from_uncompressed_be(base + G1_LEN, Q))
                     return Unexpected(HostFunctionError::DECODING);
 
-                // Convention: ignore (0) pairs; they contribute neutral element
                 if (P.is_zero() || Q.is_zero())
                     continue;
 
@@ -756,9 +734,6 @@ public:
             }
             auto const gt = libff::alt_bn128_pp::final_exponentiation(acc);
             bool const result = (gt == libff::alt_bn128_GT::one());
-            // std::cout << "bn254PairingHelper result: " << result << std::endl;
-            
-            // out[0] = result ? uint8_t{1} : uint8_t{0};
 
             last_pairing_out_ = result;
 

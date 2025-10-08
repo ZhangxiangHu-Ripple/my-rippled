@@ -946,8 +946,7 @@ WasmHostFunctionsImpl::bn254AddHelper(
             return Unexpected(HostFunctionError::DECODING);
             
         libff::alt_bn128_G1 result = p1 + p2;
-        // std::cout << "\n --++ Addition Result in Projective format = (" << result.X << ", " << result.Y << ")\n";
-
+        
         Bytes out(64);
         if (!g1_to_uncompressed_be(result, out.data()))
             return Unexpected(HostFunctionError::INTERNAL);
@@ -981,8 +980,6 @@ WasmHostFunctionsImpl::bn254MulHelper(
 
         libff::alt_bn128_G1 result = s * p1;
 
-        // std::cout << "\n --++ Multiplication Result in Projective format = (" << result.X << ", " << result.Y << ")\n";
-
         Bytes out(G1_LEN);
         if (!g1_to_uncompressed_be(result, out.data()))
             return Unexpected(HostFunctionError::INTERNAL);
@@ -1010,8 +1007,6 @@ WasmHostFunctionsImpl::bn254NegHelper(
             return Unexpected(HostFunctionError::DECODING);
 
         libff::alt_bn128_G1 result = -p1;
-
-        // std::cout << "\n --++ Multiplication Result in Projective format = (" << result.X << ", " << result.Y << ")\n";
 
         Bytes out(G1_LEN);
         if (!g1_to_uncompressed_be(result, out.data()))
@@ -1047,14 +1042,12 @@ WasmHostFunctionsImpl::bn254PairingHelper(
             libff::alt_bn128_G1 P;
             libff::alt_bn128_G2 Q;
 
-            // Decode P (G1) and Q (G2) from uncompressed big-endian encodings
             if (!g1_from_uncompressed_be(base + 0, P))
                 return Unexpected(HostFunctionError::DECODING);
 
             if (!g2_from_uncompressed_be(base + G1_LEN, Q))
                 return Unexpected(HostFunctionError::DECODING);
 
-            // Convention: ignore (0) pairs; they contribute neutral element
             if (P.is_zero() || Q.is_zero())
                 continue;
 
@@ -1065,9 +1058,6 @@ WasmHostFunctionsImpl::bn254PairingHelper(
         }
         auto const gt = libff::alt_bn128_pp::final_exponentiation(acc);
         bool const result = (gt == libff::alt_bn128_GT::one());
-        // std::cout << "bn254PairingHelper result: " << result << std::endl;
-
-        // out[0] = result ? uint8_t{1} : uint8_t{0};
 
         return result ? 1 : -1;
     }

@@ -1761,12 +1761,11 @@ bn254MulHelper_wrap(void* env, wasm_val_vec_t const* params, wasm_val_vec_t* res
     auto const* runtime = reinterpret_cast<InstanceWrapper const*>(hf->getRT());
     
     int i = 0;
-    // Read P1
+
     auto const p1 = getDataSlice(runtime, params, i);
     if (!p1)
         return hfResult(results, p1.error());
-
-    // Read P2
+    
     auto s = getDataSlice(runtime, params, i);
     if (!s)
         return hfResult(results, s.error());
@@ -1942,12 +1941,10 @@ bn254AddHelper_wrap(
     auto const* rt = reinterpret_cast<InstanceWrapper const*>(hf->getRT());
     int index = 0;
 
-    // Read P1
     auto p1 = getDataSlice(rt, params, index);
     if (!p1)
         return hfResult(results, p1.error());
 
-    // Read P2
     auto p2 = getDataSlice(rt, params, index);
     if (!p2)
         return hfResult(results, p2.error());
@@ -1988,10 +1985,6 @@ bn254PairingHelper_wrap(
     if (!pairs)
         return hfResult(results, pairs.error());
 
-    // Call the virtual host function. returnResult will:
-    //  - read the (ptr,len) for the output buffer from params using 'index'
-    //  - copy the Bytes (even if empty) into that buffer
-    //  - set the numeric return value in 'results'
     return returnResult(rt, params, results, hf->bn254PairingHelper(*pairs), index);
 }
 

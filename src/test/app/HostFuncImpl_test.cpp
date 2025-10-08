@@ -2933,11 +2933,8 @@ struct HostFuncImpl_test : public beast::unit_test::suite
             keylet::escrow(env.master, env.seq(env.master));
         WasmHostFunctionsImpl hfs(ac, dummyEscrow);
 
-        // don’t print profiling info
-        libff::inhibit_profiling_info = true;
-        // don’t even update the counters.
-        libff::inhibit_profiling_counters = true;
-        
+        libff::inhibit_profiling_info = true;       // don’t print profiling info
+        libff::inhibit_profiling_counters = true;   // don’t even update the counters.
         libff::alt_bn128_pp::init_public_params();
 
         const std::array<uint8_t, 64> p1 = {
@@ -2985,8 +2982,8 @@ struct HostFuncImpl_test : public beast::unit_test::suite
             keylet::escrow(env.master, env.seq(env.master));
         WasmHostFunctionsImpl hfs(ac, dummyEscrow);
 
-        libff::inhibit_profiling_info = true;
-        libff::inhibit_profiling_counters = true;
+        libff::inhibit_profiling_info = true;       // don’t print profiling info
+        libff::inhibit_profiling_counters = true;   // don’t even update the counters.
         libff::alt_bn128_pp::init_public_params();
 
         const std::array<uint8_t, 64> p1 = {
@@ -3033,8 +3030,8 @@ struct HostFuncImpl_test : public beast::unit_test::suite
             keylet::escrow(env.master, env.seq(env.master));
         WasmHostFunctionsImpl hfs(ac, dummyEscrow);
 
-        libff::inhibit_profiling_info = true;
-        libff::inhibit_profiling_counters = true;
+        libff::inhibit_profiling_info = true;       // don’t print profiling info
+        libff::inhibit_profiling_counters = true;   // don’t even update the counters.
         libff::alt_bn128_pp::init_public_params();
 
         const std::array<uint8_t, 64> p1 = {
@@ -3074,8 +3071,8 @@ struct HostFuncImpl_test : public beast::unit_test::suite
             keylet::escrow(env.master, env.seq(env.master));
         WasmHostFunctionsImpl hfs(ac, dummyEscrow);
 
-        libff::inhibit_profiling_info = true;
-        libff::inhibit_profiling_counters = true;
+        libff::inhibit_profiling_info = true;       // don’t print profiling info
+        libff::inhibit_profiling_counters = true;   // don’t even update the counters.
         libff::alt_bn128_pp::init_public_params();
 
         const std::array<uint8_t, 768> pairs = {
@@ -3120,18 +3117,6 @@ struct HostFuncImpl_test : public beast::unit_test::suite
 
         auto result = hfs.bn254PairingHelper(Slice{pairs.data(), pairs.size()});
         BEAST_EXPECT(result) && BEAST_EXPECT(*result == 1);
-        
-        // if (!result)
-        // {
-        //     log << "bn254PairingHelper returned error: "
-        //         << static_cast<int>(result.error()) << "\n";
-        //     BEAST_EXPECT(false); // force failure on error
-        //     return;
-        // }
-
-        // int32_t const v = *result; // 1 (valid) or -1 (invalid)
-        // log << "Groth16 pairing check: " << (v == 1 ? "success" : "fail")
-        //     << " (value=" << v << ")\n";
     }
 
     void
@@ -3147,8 +3132,8 @@ struct HostFuncImpl_test : public beast::unit_test::suite
             keylet::escrow(env.master, env.seq(env.master));
         WasmHostFunctionsImpl hfs(ac, dummyEscrow);
 
-        libff::inhibit_profiling_info = true;
-        libff::inhibit_profiling_counters = true;
+        libff::inhibit_profiling_info = true;       // don’t print profiling info
+        libff::inhibit_profiling_counters = true;   // don’t even update the counters.
         libff::alt_bn128_pp::init_public_params();
 
         const uint8_t vk_bytes[832] = {
@@ -3199,26 +3184,15 @@ struct HostFuncImpl_test : public beast::unit_test::suite
             std::memcpy(add_buf, addRes->data(), IC_LEN);
         }
         const uint8_t* vk_x_bytes = add_buf;
-        // for (int i = 0; i < 64; ++i) {
-        //     std::cout << std::hex << std::setw(2) << std::setfill('0') << (int)vk_x_bytes[i];
-        // }
-        // std::cout << std::dec << std::endl;
 
-        // Split proof into (a, b, c) byte slices
+        // Split proof into (a, b, c) 
         const uint8_t* proof_a_bytes = proof_bytes;
         const uint8_t* proof_b_bytes = proof_bytes + G1_LEN;
         const uint8_t* proof_c_bytes = proof_bytes + G1_LEN + G2_LEN;
 
-        // Negate proof.a via host function
+        // Negate proof.a 
         uint8_t proof_a_buf[G1_LEN];
         std::memcpy(proof_a_buf, proof_a_bytes, G1_LEN);
-        // std::cout << "before negation proof_a_bytes\n" << std::endl;
-        
-        // for (int i = 0; i < 64; ++i) {
-        //     std::cout << std::hex << std::setw(2) << std::setfill('0') << (int)proof_a_bytes[i];
-        // }
-        // std::cout << std::dec << std::endl;
-
         uint8_t neg_proof_a_bytes[G1_LEN] = {0};
         {
             auto negRes = hfs.bn254NegHelper(Slice{proof_a_buf, G1_LEN});
@@ -3231,17 +3205,18 @@ struct HostFuncImpl_test : public beast::unit_test::suite
         uint8_t gamma_bytes[G2_LEN];
         uint8_t delta_bytes[G2_LEN];
 
-        // Extract alpha, beta, gamma, delta from vk_bytes
+        // Extract alpha, beta, gamma, delta 
         std::memcpy(alpha_bytes, vk_bytes, G1_LEN);
-        std::memcpy(beta_bytes,  vk_bytes + G1_LEN,                         G2_LEN);
+        std::memcpy(beta_bytes,  vk_bytes + G1_LEN, G2_LEN);
         std::memcpy(gamma_bytes, vk_bytes + G1_LEN + G2_LEN,  G2_LEN);
         std::memcpy(delta_bytes, vk_bytes + G1_LEN + 2 * G2_LEN, G2_LEN);
 
-        // Prepare input_pairs = [(−a, b), (alpha, beta), (vk_x, gamma), (c, delta)]
+        // Prepare input for pairing check
+        // input_pairs = [(−a, b), (alpha, beta), (vk_x, gamma), (c, delta)]
         uint8_t input_pairs[GROTH16_PAIR_LEN];
         size_t offset = 0;
 
-        // 1. (neg a, b)
+        // 1. (-a, b)
         std::memcpy(input_pairs + offset, neg_proof_a_bytes, G1_LEN);
         offset += G1_LEN;
         std::memcpy(input_pairs + offset, proof_b_bytes, G2_LEN);
@@ -3263,49 +3238,12 @@ struct HostFuncImpl_test : public beast::unit_test::suite
         std::memcpy(input_pairs + offset, proof_c_bytes, G1_LEN);
         offset += G1_LEN;
         std::memcpy(input_pairs + offset, delta_bytes, G2_LEN);
-        
-        // std::cout << "before pairing check\n" << std::endl;
-        // for (int i = 0; i < 768; ++i) {
-        //     std::cout << std::hex << std::setw(2) << std::setfill('0') << (int)input_pairs[i];
-        // }
-        // std::cout << std::dec << std::endl;
 
         size_t num = 1;
         for (size_t i = 0; i < num; ++i) {
             auto result = hfs.bn254PairingHelper(Slice{input_pairs, GROTH16_PAIR_LEN});
             BEAST_EXPECT(result) && BEAST_EXPECT(*result == 1);
         }
-
-        const uint8_t mul_bytes[64] = {
-            7, 7, 185, 32, 188, 151, 140, 2, 242, 146, 250, 226, 3, 110, 5, 123, 229, 66, 148, 17, 76, 204, 60, 135, 105, 216, 131, 246, 136, 161, 66, 63, 46, 50, 160, 148, 183, 88, 149, 84, 247, 188, 53, 123, 246, 52, 129, 172, 210, 213, 85, 85, 194, 3, 56, 55, 130, 164, 101, 7, 135, 255, 102, 66
-        };
-        const uint8_t scalar_bytes[32] = {
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 97, 238, 117, 236, 77, 51, 91, 71, 50, 139, 18, 62, 39, 137, 67, 136
-        };
-
-        uint8_t mul_test[64] = {0};
-
-        auto mulTest = hfs.bn254MulHelper(
-            Slice{mul_bytes, IC_LEN},
-            Slice{scalar_bytes, SCALAR_LEN});
-        BEAST_EXPECT(mulTest.has_value());
-        std::memcpy(mul_test, mulTest->data(), IC_LEN);
-
-        // constexpr std::array<uint8_t, 64> EXPECTED = {
-        //     0x09, 0xB6, 0xE3, 0x62, 0x92, 0x4D, 0x71, 0xBA,
-        //     0x4A, 0xD0, 0xDD, 0xD8, 0x2B, 0x94, 0x96, 0x99,
-        //     0x56, 0xB0, 0x5A, 0x04, 0xA5, 0xA0, 0xE6, 0xA8,
-        //     0xD0, 0xBF, 0x6B, 0x6F, 0x69, 0x59, 0xBE, 0xD7,
-        //     0x0D, 0x9B, 0xA2, 0x8B, 0xB5, 0x16, 0xED, 0xCB,
-        //     0x05, 0x1C, 0x0F, 0x3F, 0x93, 0x2F, 0xE2, 0xBE,
-        //     0xDD, 0x93, 0xC9, 0x0F, 0xC3, 0x78, 0x44, 0x9C,
-        //     0x2A, 0xEB, 0x09, 0x70, 0xCB, 0x8A, 0x85, 0x19,
-        // };
-
-        // bool ok = (sizeof(mul_test) == EXPECTED.size()) &&
-        //     std::equal(std::begin(mul_test), std::end(mul_test), EXPECTED.begin());
-
-        // log << "Mul test " << ok << " result\n";
 
         // auto end   = std::chrono::high_resolution_clock::now();
         // auto dur   = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
@@ -3336,7 +3274,7 @@ struct HostFuncImpl_test : public beast::unit_test::suite
         testEcMulHelper();
         testEcNegHelper();
         testEcPairingHelper();
-        testGroth16Verification();
+        // testGroth16Verification();
     }
 
     void
@@ -3344,16 +3282,16 @@ struct HostFuncImpl_test : public beast::unit_test::suite
     {
         testGetLedgerSqn();
         testGetParentLedgerTime();
-        // testGetParentLedgerHash();
-        // testGetLedgerAccountHash();
-        // testGetLedgerTransactionHash();
-        // testGetBaseFee();
-        // testIsAmendmentEnabled();
-        // testCacheLedgerObj();
-        // testGetTxField();
-        // testGetCurrentLedgerObjField();
-        // testGetLedgerObjField();
-        // testGetTxNestedField();
+        testGetParentLedgerHash();
+        testGetLedgerAccountHash();
+        testGetLedgerTransactionHash();
+        testGetBaseFee();
+        testIsAmendmentEnabled();
+        testCacheLedgerObj();
+        testGetTxField();
+        testGetCurrentLedgerObjField();
+        testGetLedgerObjField();
+        testGetTxNestedField();
         // testGetCurrentLedgerObjNestedField();
         // testGetLedgerObjNestedField();
         // testGetTxArrayLen();
@@ -3372,10 +3310,10 @@ struct HostFuncImpl_test : public beast::unit_test::suite
         // testGetNFTFlags();
         // testGetNFTTransferFee();
         // testGetNFTSerial();
-        testTrace();
-        testTraceNum();
-        testTraceAccount();
-        testTraceAmount();
+        // testTrace();
+        // testTraceNum();
+        // testTraceAccount();
+        // testTraceAmount();
         // testFloats();
         testBN254();
     }

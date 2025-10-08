@@ -101,7 +101,6 @@ setCommonHostFunctions(HostFunctions* hfs, std::vector<WasmImportFunc>& i)
     WASM_IMPORT_FUNC2(i, floatSet, "float_set", hfs,                                                          1000);
     WASM_IMPORT_FUNC2(i, floatCompare, "float_compare", hfs,                                                  1000);
     WASM_IMPORT_FUNC2(i, floatAdd, "float_add", hfs,                                                          1000);
-    WASM_IMPORT_FUNC2(i, bn254MulHelper, "bn254_mul_helper", hfs,                                             2000);
     WASM_IMPORT_FUNC2(i, floatSubtract, "float_subtract", hfs,                                                1000);
     WASM_IMPORT_FUNC2(i, floatMultiply, "float_multiply", hfs,                                                1000);
     WASM_IMPORT_FUNC2(i, floatDivide, "float_divide", hfs,                                                    1000);
@@ -109,9 +108,10 @@ setCommonHostFunctions(HostFunctions* hfs, std::vector<WasmImportFunc>& i)
     WASM_IMPORT_FUNC2(i, floatPower, "float_pow", hfs,                                                        1000);
     WASM_IMPORT_FUNC2(i, floatLog, "float_log", hfs,                                                          1000);
 
-    WASM_IMPORT_FUNC2(i, bn254AddHelper, "bn254_add_helper", hfs,                                             2000);
-    WASM_IMPORT_FUNC2(i, bn254NegHelper, "bn254_neg_helper", hfs,                                             2000);
-    WASM_IMPORT_FUNC2(i, bn254PairingHelper, "bn254_pairing_helper", hfs,                                     2000);
+    WASM_IMPORT_FUNC2(i, bn254AddHelper, "bn254_add_helper", hfs,                                              500);
+    WASM_IMPORT_FUNC2(i, bn254MulHelper, "bn254_mul_helper", hfs,                                             6000);
+    WASM_IMPORT_FUNC2(i, bn254NegHelper, "bn254_neg_helper", hfs,                                              500);
+    WASM_IMPORT_FUNC2(i, bn254PairingHelper, "bn254_pairing_helper", hfs,                                    40000);
     // clang-format on
 }
 
